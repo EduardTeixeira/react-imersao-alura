@@ -20,6 +20,31 @@ function ProfileSidebar(propriedades) {
   )
 }
 
+function ProfileRelationsBox(propriedades) {
+  console.log(propriedades)
+  return (
+    <ProfileRelationsBoxWrapper>
+      <h2 className="smallTitle">
+        {propriedades.title} ({propriedades.items.length})
+    </h2>
+      {/*
+      <ul>
+        {propriedades.items.map((itemAtual) => {
+          return (
+            <li key={itemAtual.id}>
+              <a href={`/users/${itemAtual.title}`}>
+                <img src={`https://picsum.photos/200/300?random=${itemAtual.image}`} />
+                <span>{itemAtual.title}</span>
+              </a>
+            </li>
+          )
+        })}
+      </ul>
+       */}
+    </ProfileRelationsBoxWrapper>
+  )
+}
+
 export default function Home() {
 
   const gitUser = 'EduardTeixeira';
@@ -46,6 +71,21 @@ export default function Home() {
     'marcobrunodev',
     'felipefialho'
   ];
+
+  const [seguidores, setSeguidores] = React.useState([]);
+  React.useEffect(() => {
+    fetch('https://api.github.com/users/EduardTeixeira/followers')
+      .then((responseServer) => {
+        console.log(responseServer);
+        if (responseServer.ok) {
+          return responseServer.json();
+        }
+        throw new Error('Error >>> ' + responseServer.status);
+      })
+      .then((responseBody) => {
+        setSeguidores(responseBody);
+      })
+  }, [])
 
   return (
     <>
@@ -78,7 +118,7 @@ export default function Home() {
               const comunidade = {
                 id: new Date().toISOString(),
                 title: dadosForm.get('title'),
-                image: dadosForm.get('image'),
+                image: 'https://picsum.photos/200/300?random=' + dadosForm.get('image'),
               }
 
               const comunidadesAtualizadas = [...comunidades, comunidade];
@@ -93,9 +133,9 @@ export default function Home() {
                   type="text"
                 />
                 <input
-                  placeholder="Coloque uma URL para usarmos de capa"
+                  placeholder="Informe um valor, iremos gerar a imagem automaticamente para usarmos de capa"
                   name="image"
-                  aria-label="Coloque uma URL para usarmos de capa"
+                  aria-label="Informe um valor, iremos gerar a imagem automaticamente para usarmos de capa"
                 />
               </div>
               <button>
@@ -107,6 +147,8 @@ export default function Home() {
         </div>
 
         <div className="relationsArea" style={{ gridArea: 'relationsArea' }}>
+
+          <ProfileRelationsBox title='Seguidores' items={seguidores} />
 
           <ProfileRelationsBoxWrapper>
             <h2 className="smallTitle">
