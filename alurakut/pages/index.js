@@ -49,15 +49,7 @@ export default function Home() {
 
   const gitUser = 'EduardTeixeira';
 
-  const [comunidades, setComunidades] = React.useState(
-    [
-      {
-        id: '1',
-        title: 'Eu odeio acordar cedo',
-        image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg',
-      }
-    ]
-  );
+  const [comunidades, setComunidades] = React.useState([]);
   // const comunidades = comunidades[0];
   // const alteradorDeComunidades/setComunidades = comunidades[1];
 
@@ -74,6 +66,7 @@ export default function Home() {
 
   const [seguidores, setSeguidores] = React.useState([]);
   React.useEffect(() => {
+
     fetch('https://api.github.com/users/EduardTeixeira/followers')
       .then((responseServer) => {
         console.log(responseServer);
@@ -85,6 +78,46 @@ export default function Home() {
       .then((responseBody) => {
         setSeguidores(responseBody);
       })
+
+    // API GraphQL
+    fetch(
+      'https://graphql.datocms.com/',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': '30e1acd841a7897f49ad280c959736',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(
+          {
+            "query": `query { 
+              allCommunities {
+                id
+                title
+                creatorSlug
+                imageUrl
+              }
+            }`
+          }
+        ),
+      }
+    )
+      .then((responseServer) => {
+        console.log('GraphQL')
+        console.log(responseServer);
+        if (responseServer.ok) {
+          return responseServer.json();
+        }
+        throw new Error('Error >>> ' + responseServer.status);
+      })
+      .then((responseBody) => {
+        console.log('graph body')
+        console.log(responseBody)
+        const comunidadesDato = responseBody.data.allCommunities;
+        setComunidades(comunidadesDato);
+      })
+
   }, [])
 
   return (
@@ -116,14 +149,29 @@ export default function Home() {
               const dadosForm = new FormData(event.target);
 
               const comunidade = {
-                id: new Date().toISOString(),
                 title: dadosForm.get('title'),
-                image: 'https://picsum.photos/200/300?random=' + dadosForm.get('image'),
+                imageUrl: 'https://picsum.photos/200/300?random=' + dadosForm.get('image'),
+                creatorSlug: gitUser,
               }
 
-              const comunidadesAtualizadas = [...comunidades, comunidade];
-              setComunidades(comunidadesAtualizadas);
-              console.log(comunidades);
+              fetch(
+                '/api/comunidades',
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                  },
+                  body: JSON.stringify(comunidade),
+                }
+              ).then(async (response) => {
+                const dados = await response.json();
+                console.log(dados.registroCriado);
+                const comunidade = dados.registroCriado;
+                const comunidadesAtualizadas = [...comunidades, comunidade];
+                setComunidades(comunidadesAtualizadas);
+              })
+
             }}>
               <div>
                 <input
@@ -158,8 +206,8 @@ export default function Home() {
               {comunidades.map((itemAtual) => {
                 return (
                   <li key={itemAtual.id}>
-                    <a href={`/users/${itemAtual.title}`}>
-                      <img src={itemAtual.image} />
+                    <a href={`/communities/${itemAtual.id}`}>
+                      <img src={itemAtual.imageUrl} />
                       <span>{itemAtual.title}</span>
                     </a>
                   </li>
